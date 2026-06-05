@@ -1,0 +1,8 @@
+# containerlab runtime / generated state (created by `containerlab deploy`)
+clab-*/
+.clab/
+*.bak
+*.log
+ansible-inventory.yml
+topology-data.json
+authorized_keys

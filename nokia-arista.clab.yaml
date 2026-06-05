@@ -1,0 +1,180 @@
+# Multi-vendor two-pod EVPN-VXLAN fabric
+#   Pod-Nokia  : SR Linux 26.3.2  (nokia-spine1/2 = 7220 IXR-H4, nokia-leaf1..4 = 7220 IXR-D4)  IS-IS area 49.0200, loopbacks 10.252.200.x, ESI all-active MH
+#   Pod-Arista : Arista cEOS 4.34  (arista-spine1/2 = DCS7050CX3, arista-leaf5..8 = DCS7050TX3)  IS-IS area 49.0078, loopbacks 10.252.183.x, MLAG MH
+# Underlay : multi-area IS-IS, every node L1L2, inter-pod spine mesh = L2-only.   Overlay : iBGP-EVPN ASN 65524, Arista spines = RR.
+# Services : BD-A (10.110.0.0/24, VNI 10110) + BD-B (10.120.0.0/24, VNI 10120) stretched both pods, tenant VRF (L3 VNI 50001) routes A<->B.
+# Nokia ports: IXR-D4 = ethernet-1/1..36 (leaf uplinks on 1/33->spine1, 1/34->spine2); IXR-H4 = ethernet-1/1..66.
+name: nokia-arista
+prefix: ""
+
+topology:
+  defaults:
+    kind: nokia_srlinux
+  kinds:
+    nokia_srlinux:
+      image: ghcr.io/nokia/srlinux:26.3.2
+    arista_ceos:
+      image: ceos:4.34.2.1F
+    linux:
+      image: ghcr.io/srl-labs/network-multitool:latest
+
+  nodes:
+    # ---------- Pod-Nokia (SR Linux 26.3.2) ----------
+    # Spines = 7220 IXR-H4 (ixr-h4)  |  Leaves = 7220 IXR-D4 (ixr-d4)
+    nokia-spine1:
+      type: ixr-h4
+      startup-config: ./configs/nokia-spine1.cfg
+    nokia-spine2:
+      type: ixr-h4
+      startup-config: ./configs/nokia-spine2.cfg
+    nokia-leaf1:
+      type: ixr-d4
+      startup-config: ./configs/nokia-leaf1.cfg
+    nokia-leaf2:
+      type: ixr-d4
+      startup-config: ./configs/nokia-leaf2.cfg
+    nokia-leaf3:
+      type: ixr-d4
+      startup-config: ./configs/nokia-leaf3.cfg
+    nokia-leaf4:
+      type: ixr-d4
+      startup-config: ./configs/nokia-leaf4.cfg
+
+    # ---------- Pod-Arista (cEOS) ----------
+    # NOTE: cEOS emulates one generic platform; it has NO hardware-model variants,
+    #       so DCS7050CX3 (spine) / DCS7050TX3 (leaf) are intent labels only.
+    arista-spine1:                       # intended HW: DCS7050CX3
+      kind: arista_ceos
+      startup-config: ./configs/arista-spine1.cfg
+    arista-spine2:                       # intended HW: DCS7050CX3
+      kind: arista_ceos
+      startup-config: ./configs/arista-spine2.cfg
+    arista-leaf5:                        # intended HW: DCS7050TX3
+      kind: arista_ceos
+      startup-config: ./configs/arista-leaf5.cfg
+    arista-leaf6:                        # intended HW: DCS7050TX3
+      kind: arista_ceos
+      startup-config: ./configs/arista-leaf6.cfg
+    arista-leaf7:                        # intended HW: DCS7050TX3
+      kind: arista_ceos
+      startup-config: ./configs/arista-leaf7.cfg
+    arista-leaf8:                        # intended HW: DCS7050TX3
+      kind: arista_ceos
+      startup-config: ./configs/arista-leaf8.cfg
+
+    # ---------- Hosts (dual-homed, LACP bond, pure L2) ----------
+    h1:                       # BD-A, behind nokia-leaf1/2 (ESI)
+      kind: linux
+      exec:
+        - sudo ip link set eth0 down
+        - ip route add default via 172.20.20.1 dev eth0 table 100
+        - iptables -t mangle -A OUTPUT -p tcp --dport 22 -j MARK --set-mark 1
+        - ip rule add fwmark 1 table 100
+        - sudo ip link set eth0 up
+        - sudo ip link set eth1 down
+        - sudo ip link set eth2 down
+        - sudo ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast
+        - sudo ip link set eth1 master bond0
+        - sudo ip link set eth2 master bond0
+        - sudo ip link set eth1 up
+        - sudo ip link set eth2 up
+        - sudo ip link set bond0 up
+        - sudo ip addr add 10.110.0.11/24 dev bond0
+        - sudo ip route add default via 10.110.0.1
+    h2:                       # BD-B, behind nokia-leaf3/4 (ESI)
+      kind: linux
+      exec:
+        - sudo ip link set eth0 down
+        - ip route add default via 172.20.20.1 dev eth0 table 100
+        - iptables -t mangle -A OUTPUT -p tcp --dport 22 -j MARK --set-mark 1
+        - ip rule add fwmark 1 table 100
+        - sudo ip link set eth0 up
+        - sudo ip link set eth1 down
+        - sudo ip link set eth2 down
+        - sudo ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast
+        - sudo ip link set eth1 master bond0
+        - sudo ip link set eth2 master bond0
+        - sudo ip link set eth1 up
+        - sudo ip link set eth2 up
+        - sudo ip link set bond0 up
+        - sudo ip addr add 10.120.0.12/24 dev bond0
+        - sudo ip route add default via 10.120.0.1
+    h3:                       # BD-A, behind arista-leaf5/6 (MLAG)
+      kind: linux
+      exec:
+        - sudo ip link set eth0 down
+        - ip route add default via 172.20.20.1 dev eth0 table 100
+        - iptables -t mangle -A OUTPUT -p tcp --dport 22 -j MARK --set-mark 1
+        - ip rule add fwmark 1 table 100
+        - sudo ip link set eth0 up
+        - sudo ip link set eth1 down
+        - sudo ip link set eth2 down
+        - sudo ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast
+        - sudo ip link set eth1 master bond0
+        - sudo ip link set eth2 master bond0
+        - sudo ip link set eth1 up
+        - sudo ip link set eth2 up
+        - sudo ip link set bond0 up
+        - sudo ip addr add 10.110.0.13/24 dev bond0
+        - sudo ip route add default via 10.110.0.1
+    h4:                       # BD-B, behind arista-leaf7/8 (MLAG)
+      kind: linux
+      exec:
+        - sudo ip link set eth0 down
+        - ip route add default via 172.20.20.1 dev eth0 table 100
+        - iptables -t mangle -A OUTPUT -p tcp --dport 22 -j MARK --set-mark 1
+        - ip rule add fwmark 1 table 100
+        - sudo ip link set eth0 up
+        - sudo ip link set eth1 down
+        - sudo ip link set eth2 down
+        - sudo ip link add bond0 type bond mode 802.3ad miimon 100 lacp_rate fast
+        - sudo ip link set eth1 master bond0
+        - sudo ip link set eth2 master bond0
+        - sudo ip link set eth1 up
+        - sudo ip link set eth2 up
+        - sudo ip link set bond0 up
+        - sudo ip addr add 10.120.0.14/24 dev bond0
+        - sudo ip route add default via 10.120.0.1
+
+  links:
+    # ----- Pod-Nokia: spine <-> leaf (leaf e1-33 to spine1, e1-34 to spine2) -----
+    - endpoints: ["nokia-spine1:e1-1", "nokia-leaf1:e1-33"]
+    - endpoints: ["nokia-spine1:e1-2", "nokia-leaf2:e1-33"]
+    - endpoints: ["nokia-spine1:e1-3", "nokia-leaf3:e1-33"]
+    - endpoints: ["nokia-spine1:e1-4", "nokia-leaf4:e1-33"]
+    - endpoints: ["nokia-spine2:e1-1", "nokia-leaf1:e1-34"]
+    - endpoints: ["nokia-spine2:e1-2", "nokia-leaf2:e1-34"]
+    - endpoints: ["nokia-spine2:e1-3", "nokia-leaf3:e1-34"]
+    - endpoints: ["nokia-spine2:e1-4", "nokia-leaf4:e1-34"]
+
+    # ----- Pod-Arista: spine <-> leaf (leaf eth2 to spine1, eth3 to spine2) -----
+    - endpoints: ["arista-spine1:eth3", "arista-leaf5:eth2"]
+    - endpoints: ["arista-spine1:eth4", "arista-leaf6:eth2"]
+    - endpoints: ["arista-spine1:eth5", "arista-leaf7:eth2"]
+    - endpoints: ["arista-spine1:eth6", "arista-leaf8:eth2"]
+    - endpoints: ["arista-spine2:eth3", "arista-leaf5:eth3"]
+    - endpoints: ["arista-spine2:eth4", "arista-leaf6:eth3"]
+    - endpoints: ["arista-spine2:eth5", "arista-leaf7:eth3"]
+    - endpoints: ["arista-spine2:eth6", "arista-leaf8:eth3"]
+
+    # ----- Inter-pod full mesh (spine layer, carries IS-IS Level-2) -----
+    - endpoints: ["nokia-spine1:e1-21", "arista-spine1:eth1"]
+    - endpoints: ["nokia-spine1:e1-22", "arista-spine2:eth1"]
+    - endpoints: ["nokia-spine2:e1-21", "arista-spine1:eth2"]
+    - endpoints: ["nokia-spine2:e1-22", "arista-spine2:eth2"]
+
+    # ----- Arista MLAG peer-links (leaf eth4 + eth5) -----
+    - endpoints: ["arista-leaf5:eth4", "arista-leaf6:eth4"]
+    - endpoints: ["arista-leaf5:eth5", "arista-leaf6:eth5"]
+    - endpoints: ["arista-leaf7:eth4", "arista-leaf8:eth4"]
+    - endpoints: ["arista-leaf7:eth5", "arista-leaf8:eth5"]
+
+    # ----- Hosts (eth1 -> leafA, eth2 -> leafB on the same access port) -----
+    - endpoints: ["h1:eth1", "nokia-leaf1:e1-1"]
+    - endpoints: ["h1:eth2", "nokia-leaf2:e1-1"]
+    - endpoints: ["h2:eth1", "nokia-leaf3:e1-1"]
+    - endpoints: ["h2:eth2", "nokia-leaf4:e1-1"]
+    - endpoints: ["h3:eth1", "arista-leaf5:eth1"]
+    - endpoints: ["h3:eth2", "arista-leaf6:eth1"]
+    - endpoints: ["h4:eth1", "arista-leaf7:eth1"]
+    - endpoints: ["h4:eth2", "arista-leaf8:eth1"]
