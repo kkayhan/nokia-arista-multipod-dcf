@@ -59,7 +59,7 @@ Two pods, each a 2-spine / 4-leaf design, joined by a 4-link spine-to-spine full
 | Arista | `arista-leaf8` | `arista_ceos` | DCS7050TX3 *(label only)* | Leaf/VTEP — BD-B, MLAG (pair w/ leaf7) |
 | — | `h1`–`h4` | `linux` | network-multitool | Dual-homed test hosts (LACP bond) |
 
-> The Arista `DCS7050xx3` strings are **intent labels only** — cEOS emulates a single generic platform with no hardware-model variants. They document design intent, nothing more (see [Notes & gotchas](#notes--gotchas)).
+> The Arista `DCS7050xx3` strings are **intent labels only** — cEOS emulates a single generic platform with no hardware-model variants. They document design intent, nothing more.
 
 ### Host attachments
 
@@ -278,14 +278,6 @@ done
 - **MLAG (`arista-leaf5`):** domain `POD-AB-56`, state `Active`, peer-link `Up`, peer-config `consistent`.
 - **Nokia ES (`h1_esi`):** Oper `up`, all-active, DF elected = `10.252.200.1` (candidates `.1` DF + `.2`).
 - **Ping matrix:** **all 12 directed host pairs at 0% loss** in steady state (avg ~3 ms intra-subnet, ~10–15 ms cross-pod routed). The very first packet on a cold path can drop while ARP/MAC is learned, then it's clean.
-
-## Notes & gotchas
-
-- **IXR-D4 has only 36 ports → leaf uplinks renumbered.** The 7220 IXR-D4 exposes `ethernet-1/1..36`, so the canonical `e1-49`/`e1-50` uplinks **do not exist**. Nokia leaf uplinks use **`e1-33` → spine1** and **`e1-34` → spine2** instead. Don't copy a `1/49`/`1/50` uplink convention onto a D4. (Verify any SR Linux platform's real port inventory with `sr_cli -d "info from state interface *"`.)
-- **cEOS has no hardware-model variants.** The `DCS7050CX3` / `DCS7050TX3` strings in the topology are **documentation/intent only** — cEOS emulates one generic platform and ignores the label. Treat them as "what this would be on real hardware," not as configuration that changes behaviour.
-- **Overload-on-boot is 90 s.** Both vendors set the IS-IS overload bit for 90 seconds at boot to keep traffic off the fabric until it's fully converged. Plan for ~90 s after `deploy` before EVPN/pings work; an immediate test will look broken when it isn't.
-- **Cross-vendor MTU is the silent killer.** The SR Linux ↔ cEOS inter-pod IS-IS adjacency only comes up when **MTU matches on both ends** (9000 here) **and** hello padding is relaxed (`no isis hello padding` / `hello-padding loose`) over **numbered same-subnet /31s**. A bare MTU mismatch drops padded hellos with no obvious error — check this first if an inter-pod adjacency won't form.
-- **Vendor-specific show paths differ.** SR Linux uses `sr_cli -d "…"`; cEOS uses `Cli -p 15 -c "…"`. On SR Linux 26.3.2 the Ethernet-Segment command path has **no `protocols evpn` prefix** (`show system network-instance ethernet-segments …`).
 
 ## Repository layout
 
