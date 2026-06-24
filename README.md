@@ -1,37 +1,33 @@
 # nokia-arista-multipod-dcf
 
-A multi-vendor EVPN-VXLAN data-center fabric in [containerlab](https://containerlab.dev): two leaf-spine pods — one Nokia **SR Linux**, one Arista **cEOS** — joined into a single stretched overlay so that four hosts across both pods reach each other over L2 and L3.
+A multi-vendor EVPN-VXLAN data-center fabric you can run on your laptop with [containerlab](https://containerlab.dev). Two leaf-spine pods — one **Nokia SR Linux**, one **Arista cEOS** — are joined into a single stretched overlay, so four hosts spread across both vendors reach each other over L2 and L3. A **Grafana telemetry dashboard** ships with the lab and lights up the whole fabric live.
 
 ![topology](topology.png)
 
-## What this lab demonstrates
+## What you'll see
 
-- A **single EVPN-VXLAN domain spanning two different vendors** — Nokia SR Linux 26.3.2 and Arista cEOS 4.34.2.1F — interoperating purely over open standards (IS-IS, BGP-EVPN, VXLAN).
-- A **multi-area IS-IS underlay** that knits two pods together: each pod is its own IS-IS area, joined by a Level-2-only spine-to-spine full mesh, with all loopbacks reachable end-to-end and **no route leaking**.
-- A **single iBGP-EVPN control plane** (ASN 65524 everywhere) where the Arista spines act as the EVPN **Route-Reflectors** for every leaf in both pods, while the Nokia spines stay pure IS-IS transit and run no BGP at all.
-- **Two stretched L2 services** (BD-A and BD-B) plus a **tenant L3 VRF** that routes between them using **symmetric IRB** — with an **identical anycast gateway MAC across both vendors**.
-- **Two different multihoming technologies coexisting** under the same overlay: **EVPN ESI all-active** on the Nokia side and **MLAG** on the Arista side, transparently interoperable because both speak plain EVPN.
-- A concrete cross-vendor interop result: **all four dual-homed hosts ping each other**, intra-subnet and inter-subnet.
+- A **single EVPN-VXLAN network spanning two different vendors** (Nokia SR Linux + Arista cEOS), interoperating purely over open standards — IS-IS, BGP-EVPN, VXLAN.
+- **Two stretched L2 services** (BD-A and BD-B) plus a **tenant L3 VRF** that routes between them, so hosts in different pods and different subnets all talk to each other.
+- **Two multihoming styles side by side** — EVPN **ESI all-active** on the Nokia side, **MLAG** on the Arista side — both transparently interworking under the same overlay.
+- A **live topology dashboard** in Grafana showing per-link traffic and interface state across both pods in real time.
 
 ## Topology
 
-Two pods, each a 2-spine / 4-leaf design, joined by a 4-link spine-to-spine full mesh that carries IS-IS Level-2.
+Two pods, each a 2-spine / 4-leaf design, joined by a 4-link spine-to-spine mesh.
 
 ```
-                        INTER-POD SPINE FULL MESH (IS-IS Level-2 only, 4 links)
+                        INTER-POD SPINE MESH (carries the backbone)
             ┌───────────────────────────────────────────────────────────────────┐
             │                                                                     │
    ╔════════╧═════════════════════════╗               ╔═════════════════════════╧════════╗
    ║            POD-NOKIA              ║               ║            POD-ARISTA             ║
-   ║   IS-IS area 49.0200             ║               ║   IS-IS area 49.0078             ║
-   ║   loopbacks 10.252.200.x         ║               ║   loopbacks 10.252.183.x         ║
+   ║          (SR Linux)              ║               ║            (cEOS)                ║
    ║                                  ║               ║                                  ║
    ║   nokia-spine1   nokia-spine2    ║               ║   arista-spine1  arista-spine2   ║
-   ║   (IXR-H4)       (IXR-H4)        ║               ║   (EVPN RR)      (EVPN RR)       ║
+   ║                                  ║               ║   (EVPN RRs)                     ║
    ║       │  ╲      ╱  │             ║               ║       │  ╲      ╱  │             ║
-   ║       │   ╲    ╱   │             ║               ║       │   ╲    ╱   │             ║
    ║   ┌───┴───┬───┬────┴───┐         ║               ║   ┌───┴───┬───┬────┴───┐         ║
-   ║  L1   L2  L3  L4 (IXR-D4)        ║               ║  L5   L6  L7  L8 (cEOS)          ║
+   ║  L1   L2  L3  L4                 ║               ║  L5   L6  L7  L8                 ║
    ║  └─┬─┘   └─┬─┘           (ESI)   ║               ║  └─┬─┘   └─┬─┘          (MLAG)   ║
    ║    │       │                     ║               ║    │       │                     ║
    ╚════│═══════│═════════════════════╝               ╚════│═══════│═════════════════════╝
@@ -41,63 +37,39 @@ Two pods, each a 2-spine / 4-leaf design, joined by a 4-link spine-to-spine full
      (BD-A)    (BD-B)                                  (BD-A)     (BD-B)
 ```
 
-### Nodes
-
-| Pod | Node | Kind | Model (intent) | Role |
-|---|---|---|---|---|
-| Nokia | `nokia-spine1` | `nokia_srlinux` | 7220 IXR-H4 (`ixr-h4`) | Spine — IS-IS transit (no BGP) |
-| Nokia | `nokia-spine2` | `nokia_srlinux` | 7220 IXR-H4 (`ixr-h4`) | Spine — IS-IS transit (no BGP) |
-| Nokia | `nokia-leaf1` | `nokia_srlinux` | 7220 IXR-D4 (`ixr-d4`) | Leaf/VTEP — BD-A, ESI (pair w/ leaf2) |
-| Nokia | `nokia-leaf2` | `nokia_srlinux` | 7220 IXR-D4 (`ixr-d4`) | Leaf/VTEP — BD-A, ESI (pair w/ leaf1) |
-| Nokia | `nokia-leaf3` | `nokia_srlinux` | 7220 IXR-D4 (`ixr-d4`) | Leaf/VTEP — BD-B, ESI (pair w/ leaf4) |
-| Nokia | `nokia-leaf4` | `nokia_srlinux` | 7220 IXR-D4 (`ixr-d4`) | Leaf/VTEP — BD-B, ESI (pair w/ leaf3) |
-| Arista | `arista-spine1` | `arista_ceos` | DCS7050CX3 *(label only)* | Spine — EVPN Route-Reflector (no VXLAN) |
-| Arista | `arista-spine2` | `arista_ceos` | DCS7050CX3 *(label only)* | Spine — EVPN Route-Reflector (no VXLAN) |
-| Arista | `arista-leaf5` | `arista_ceos` | DCS7050TX3 *(label only)* | Leaf/VTEP — BD-A, MLAG (pair w/ leaf6) |
-| Arista | `arista-leaf6` | `arista_ceos` | DCS7050TX3 *(label only)* | Leaf/VTEP — BD-A, MLAG (pair w/ leaf5) |
-| Arista | `arista-leaf7` | `arista_ceos` | DCS7050TX3 *(label only)* | Leaf/VTEP — BD-B, MLAG (pair w/ leaf8) |
-| Arista | `arista-leaf8` | `arista_ceos` | DCS7050TX3 *(label only)* | Leaf/VTEP — BD-B, MLAG (pair w/ leaf7) |
-| — | `h1`–`h4` | `linux` | network-multitool | Dual-homed test hosts (LACP bond) |
-
-> The Arista `DCS7050xx3` strings are **intent labels only** — cEOS emulates a single generic platform with no hardware-model variants. They document design intent, nothing more.
-
-### Host attachments
-
-Each host bonds `eth1`+`eth2` into a single LACP `bond0` and dual-homes to a leaf pair:
-
-| Host | IP | BD | Leaf A (`eth1`) | Leaf B (`eth2`) | Multihoming |
-|---|---|---|---|---|---|
-| `h1` | 10.110.0.11/24 | BD-A | `nokia-leaf1:e1-1` | `nokia-leaf2:e1-1` | EVPN ESI all-active |
-| `h2` | 10.120.0.12/24 | BD-B | `nokia-leaf3:e1-1` | `nokia-leaf4:e1-1` | EVPN ESI all-active |
-| `h3` | 10.110.0.13/24 | BD-A | `arista-leaf5:eth1` | `arista-leaf6:eth1` | MLAG |
-| `h4` | 10.120.0.14/24 | BD-B | `arista-leaf7:eth1` | `arista-leaf8:eth1` | MLAG |
-
-### Fabric ports
-
-| Link | Nokia pod | Arista pod |
+| Node | Vendor | Role |
 |---|---|---|
-| Leaf → spine uplinks | `e1-33` → spine1, `e1-34` → spine2 (unnumbered) | `Ethernet2` → spine1, `Ethernet3` → spine2 (numbered /31) |
-| Spine → leaf downlinks | `e1-1`..`e1-4` | `Ethernet3`..`Ethernet6` |
-| Inter-pod (spine↔spine) | `e1-21`, `e1-22` (numbered /31) | `Ethernet1`, `Ethernet2` (numbered /31) |
-| Multihoming peer-link | none (ESI is peer-link-less) | `Ethernet4`+`Ethernet5` → `Port-Channel1` |
-| Host access | `e1-1` | `Ethernet1` |
+| `nokia-spine1`, `nokia-spine2` | SR Linux | Spines — pure transit (no BGP) |
+| `nokia-leaf1`…`nokia-leaf4` | SR Linux | Leaves / VTEPs (ESI multihoming) |
+| `arista-spine1`, `arista-spine2` | cEOS | Spines — EVPN Route-Reflectors |
+| `arista-leaf5`…`arista-leaf8` | cEOS | Leaves / VTEPs (MLAG multihoming) |
+| `h1`…`h4` | Linux | Dual-homed test hosts |
 
-## Requirements & images
+The four hosts each bond two links to a leaf pair and sit on two stretched subnets:
 
-| Component | Version / tag | Notes |
+| Host | IP | Service | Attached to |
+|---|---|---|---|
+| `h1` | 10.110.0.11 | BD-A | `nokia-leaf1` + `nokia-leaf2` (ESI) |
+| `h2` | 10.120.0.12 | BD-B | `nokia-leaf3` + `nokia-leaf4` (ESI) |
+| `h3` | 10.110.0.13 | BD-A | `arista-leaf5` + `arista-leaf6` (MLAG) |
+| `h4` | 10.120.0.14 | BD-B | `arista-leaf7` + `arista-leaf8` (MLAG) |
+
+## Requirements
+
+| Component | Version | Notes |
 |---|---|---|
-| containerlab | tested on **0.75.0** | any recent 0.7x release should work |
-| Nokia SR Linux | `ghcr.io/nokia/srlinux:26.3.2` | Pullable from GHCR |
-| Arista cEOS | `ceos:4.34.2.1F` | **Must be imported manually** (see below) |
-| network-multitool | `ghcr.io/srl-labs/network-multitool:latest` | Pullable from GHCR |
+| containerlab | 0.7x (tested 0.75.0) | the only thing you install |
+| Nokia SR Linux | `ghcr.io/nokia/srlinux:26.3.2` | pulls automatically |
+| network-multitool | `ghcr.io/srl-labs/network-multitool:latest` | pulls automatically (the hosts) |
+| Arista cEOS | `ceos:4.34.2.1F` | **you must import this manually** ↓ |
+| Grafana / Prometheus / Loki / gnmic / Promtail | pinned in the topology file | pull automatically (telemetry stack) |
 
-> **cEOS is not pullable.** Arista cEOS images are not published to a public registry. Download `cEOS64-lab-4.34.2.1F.tar.xz` (or the matching tarball) from your Arista account and import it locally so the `ceos:4.34.2.1F` tag exists:
->
+> **cEOS is not downloadable from a public registry.** Get `cEOS64-lab-4.34.2.1F.tar.xz` from your Arista account, then import it so the `ceos:4.34.2.1F` tag exists:
 > ```bash
 > docker import cEOS64-lab-4.34.2.1F.tar.xz ceos:4.34.2.1F
 > ```
->
-> The SR Linux and network-multitool images pull automatically on first deploy.
+
+Also make sure these host ports are free, they're used by the dashboard: **3000** (Grafana), **9090** (Prometheus), **3100** (Loki), **9080** (Promtail).
 
 ## Deploy
 
@@ -105,179 +77,116 @@ Each host bonds `eth1`+`eth2` into a single LACP `bond0` and dual-homes to a lea
 sudo containerlab deploy -t nokia-arista-multipod-dcf.clab.yaml
 ```
 
-> **Allow ~90 s for convergence.** Every node sets the IS-IS **overload bit on boot for 90 seconds** (`overload on-boot` / `set-overload-bit on-startup 90`). The fabric stays out of the transit path until that timer expires, so BGP-EVPN sessions, MAC/IP learning, and end-to-end pings settle roughly 90 seconds after the deploy completes. A first ping right after deploy may fail — wait it out.
+> **Give it ~90 seconds to settle.** On boot every switch holds itself out of the forwarding path for 90 s (the IS-IS overload timer) while the fabric converges. A ping run immediately after deploy may fail — wait it out, then everything works.
 
-## Addressing & design
-
-### Loopbacks, IS-IS areas & NET
-
-| Node | Loopback / Router-ID (VTEP if leaf) | IS-IS area | NET |
-|---|---|---|---|
-| `nokia-spine1` | 10.252.200.101 | 49.0200 | 49.0200.0102.5220.0101.00 |
-| `nokia-spine2` | 10.252.200.102 | 49.0200 | 49.0200.0102.5220.0102.00 |
-| `nokia-leaf1` | 10.252.200.1 | 49.0200 | 49.0200.0102.5220.0001.00 |
-| `nokia-leaf2` | 10.252.200.2 | 49.0200 | 49.0200.0102.5220.0002.00 |
-| `nokia-leaf3` | 10.252.200.3 | 49.0200 | 49.0200.0102.5220.0003.00 |
-| `nokia-leaf4` | 10.252.200.4 | 49.0200 | 49.0200.0102.5220.0004.00 |
-| `arista-spine1` | 10.252.183.201 | 49.0078 | 49.0078.0102.5218.3201.00 |
-| `arista-spine2` | 10.252.183.202 | 49.0078 | 49.0078.0102.5218.3202.00 |
-| `arista-leaf5` | 10.252.183.5 (VTEP 10.252.183.55) | 49.0078 | 49.0078.0102.5218.3005.00 |
-| `arista-leaf6` | 10.252.183.6 (VTEP 10.252.183.55) | 49.0078 | 49.0078.0102.5218.3006.00 |
-| `arista-leaf7` | 10.252.183.7 (VTEP 10.252.183.57) | 49.0078 | 49.0078.0102.5218.3007.00 |
-| `arista-leaf8` | 10.252.183.8 (VTEP 10.252.183.57) | 49.0078 | 49.0078.0102.5218.3008.00 |
-
-> Arista leaves are MLAG pairs and share a **common VTEP loopback** per pair: leaf5+leaf6 → `10.252.183.55`, leaf7+leaf8 → `10.252.183.57`. Every node is `level-1-2`.
-
-### Inter-pod spine links (numbered /31s, Level-2 only)
-
-| Nokia side | IP | Arista side | IP |
-|---|---|---|---|
-| `nokia-spine1:e1-21` | 10.252.183.161/31 | `arista-spine1:eth1` | 10.252.183.160/31 |
-| `nokia-spine1:e1-22` | 10.252.183.163/31 | `arista-spine2:eth1` | 10.252.183.162/31 |
-| `nokia-spine2:e1-21` | 10.252.183.165/31 | `arista-spine1:eth2` | 10.252.183.164/31 |
-| `nokia-spine2:e1-22` | 10.252.183.167/31 | `arista-spine2:eth2` | 10.252.183.166/31 |
-
-> Inter-pod links are **numbered** /31s on the **same subnet** on both ends (Arista p2p IS-IS requires same-subnet adjacencies). Intra-Nokia spine↔leaf links stay **IPv4-unnumbered** (borrowing `system0.0`); intra-Arista spine↔leaf links are numbered /31s.
-
-### Hosts
-
-| Host | IP / mask | BD / subnet | Default gateway (anycast) |
-|---|---|---|---|
-| `h1` | 10.110.0.11/24 | BD-A / 10.110.0.0/24 | 10.110.0.1 |
-| `h2` | 10.120.0.12/24 | BD-B / 10.120.0.0/24 | 10.120.0.1 |
-| `h3` | 10.110.0.13/24 | BD-A / 10.110.0.0/24 | 10.110.0.1 |
-| `h4` | 10.120.0.14/24 | BD-B / 10.120.0.0/24 | 10.120.0.1 |
-
-> Each host bonds `eth1`+`eth2` into `bond0` (LACP 802.3ad, `miimon 100`, `lacp_rate fast`) and assigns its data IP/gateway to `bond0`. The management `eth0` stays on a separate policy route table (table 100 via 172.20.20.1) and is **not** the data-plane gateway.
-
-### Services
-
-Two L2 bridge-domains stretched across **both** pods, plus one tenant L3 VRF (L3 VNI 50001) routing between them via symmetric IRB.
-
-| Service | VLAN (Arista) | L2 VNI | L3 VNI | Subnet | Anycast GW | L2 RT | L3 RT |
-|---|---|---|---|---|---|---|---|
-| **BD-A** | 110 | 10110 | 50001 | 10.110.0.0/24 | 10.110.0.1 | 65524:10110 | 65524:50001 |
-| **BD-B** | 120 | 10120 | 50001 | 10.120.0.0/24 | 10.120.0.1 | 65524:10120 | 65524:50001 |
-
-- **Anycast gateway MAC (both vendors, all leaves):** `00:1c:73:01:78:ff` — identical on SR Linux (`anycast-gw-mac`, `virtual-router-id 1`) and cEOS (`ip virtual-router mac-address`).
-- **Tenant VRF** `tenant` carries **L3 VNI 50001** with RT `65524:50001` on all leaves (route distinguishers differ per-leaf by router-ID). This is what routes BD-A ↔ BD-B.
-- L2 route-distinguishers are per-leaf `<router-id>:<L2VNI>` (e.g. `10.252.200.1:10110`, `10.252.183.5:10110`).
-- Served by: BD-A → Nokia leaf1/leaf2 + Arista leaf5/leaf6; BD-B → Nokia leaf3/leaf4 + Arista leaf7/leaf8.
-
-## Underlay (IS-IS)
-
-A **multi-area IS-IS** fabric. Each pod is its own area; the pods join over a Level-2-only spine mesh.
-
-- **Per-pod areas:** Nokia pod = `49.0200`, Arista pod = `49.0078`. Every node is **Level-1-2**.
-- **Intra-pod links** carry both levels. The Level-2 backbone runs spine→spine across the inter-pod mesh; those four links are pinned **Level-2 only** (`level 1 disable true` on SR Linux, `isis circuit-type level-2` on cEOS).
-- **All loopbacks are reachable everywhere** with **no route leaking** — there's no redistribution between areas; standard L1/L2 IS-IS behaviour floods L2 prefixes across the backbone so every VTEP and RR loopback resolves end to end.
-- **AF scope:** IS-IS is **IPv4-only** (IPv6 unicast disabled on inter-pod links).
-- **MTU:** SR Linux runs `default-ip-mtu 9000` / `default-l2-mtu 9214`; cEOS inter-pod links are `mtu 9000`, leaf fabric links `mtu 9214`.
-
-### Cross-vendor IS-IS caveat (the silent killer)
-
-Getting an SR Linux ↔ cEOS IS-IS adjacency up requires three things to line up:
-
-1. **Numbered, same-subnet /31s** on the inter-pod links — Arista's point-to-point IS-IS will not form an adjacency across mismatched subnets. (Intra-Nokia links can stay unnumbered; the cross-vendor ones cannot.)
-2. **Hello padding disabled / loosened on both sides** — cEOS: `no isis hello padding`; SR Linux: `hello-padding loose`.
-3. **Matched MTU** — both ends at 9000 on the inter-pod links. **MTU mismatch is the classic silent failure**: hellos with full-MTU padding are dropped and the adjacency never comes up, with no obvious error.
-
-> **Why hello padding matters here:** the two vendors compute the IS-IS PDU MTU slightly differently — SR Linux pads hellos to `ip-mtu − 8` ≈ **8992 bytes**, while cEOS sets its IS-IS MTU to `port-mtu − 3` ≈ **8997 bytes**. With both inter-pod interfaces at MTU 9000 and padding loosened, cEOS accepts SR Linux's 8992-byte hello. Drop the MTU on the cEOS side (or leave full padding on) and that hello gets silently discarded before parsing — which is exactly the trap that makes every *other* field look like the culprit.
-
-The SR Linux side additionally pins these inter-pod links **IPv4-only** with **Level-2 only**.
-
-## Overlay (BGP-EVPN)
-
-One iBGP-EVPN domain, **ASN 65524 everywhere**.
-
-- **Route-Reflectors = the two Arista spines** (`arista-spine1` = 10.252.183.201, `arista-spine2` = 10.252.183.202). Each runs `bgp cluster-id` = its own loopback and reflects EVPN to all clients.
-- **RR clients = all 8 leaves** (4 Nokia + 4 Arista), each peering to **both** RRs:
-  - Nokia leaf router-IDs: `10.252.200.1`–`10.252.200.4`
-  - Arista leaf router-IDs: `10.252.183.5`–`10.252.183.8`
-- The two RRs are **iBGP-peered to each other** (not RR-clients of one another).
-- **Nokia spines run no BGP** — they are pure IS-IS transit. The Arista spines are RR-only and carry **no VXLAN interface**; only the leaves are VTEPs.
-- **Address families:** EVPN activated everywhere; IPv4-unicast disabled (`no bgp default ipv4-unicast` on cEOS, `ipv4-unicast admin-state disable` on SR Linux). Sessions are sourced from loopbacks (`update-source Loopback0` / `transport local-address system0`), reachable via the IS-IS underlay.
-- **Expected EVPN session count per RR:** 9 (8 leaf clients + 1 peer RR).
-
-Each RR's expected established neighbor list (both spines reflect to the same set):
-
-```
-10.252.200.1   10.252.200.2   10.252.200.3   10.252.200.4   (Nokia leaves)
-10.252.183.5   10.252.183.6   10.252.183.7   10.252.183.8   (Arista leaves)
-10.252.183.202 / .201                                       (peer RR)
+Tear it down with:
+```bash
+sudo containerlab destroy -t nokia-arista-multipod-dcf.clab.yaml
 ```
 
-## Multihoming (ESI vs MLAG)
+## Watch it live — Grafana dashboard
 
-Each host is dual-homed to a leaf pair, but the two pods do it **differently** — and both work under the same EVPN overlay because the multihoming method is local to each pod and only standard EVPN crosses the wire.
+Once deployed, open **http://localhost:3000** in your browser. No login is needed and the dashboard loads automatically.
 
-| | Nokia pod | Arista pod |
-|---|---|---|
-| Method | **EVPN ESI, all-active** | **MLAG** |
-| Pairs | leaf1+leaf2 (h1), leaf3+leaf4 (h2) | leaf5+leaf6 (h3), leaf7+leaf8 (h4) |
-| Shared identity | ESI per pair (`00:00:01:…:10` for leaf1/2, `00:00:02:…:20` for leaf3/4); LAG `system-id-mac` + `admin-key` shared across the pair | MLAG domain (`POD-AB-56`, `POD-AB-78`); shared VTEP loopback per pair; MLAG peer SVI `Vlan4094` (/31) over the `Port-Channel1` peer-link |
-| Host side | LACP `lag1` (active, fast) | LACP MLAG port-channel (`Port-Channel10`/`20`, `mlag` id) |
+**The topology panel** at the top is the centerpiece. It draws the whole fabric and animates it:
+- Every link is split into **two halves**, one per direction, each with an **arrow** (the way traffic is leaving) and a **live throughput number**.
+- Link **colour tracks load** — grey when idle, green when active, up to red when busy.
+- The little squares at each interface are **green when the port is up**, red when down.
+- **Blue = Nokia, teal = Arista.** Both pods light up, including the links crossing between them.
 
-- **Nokia ESI all-active:** both leaves in a pair advertise the same Ethernet Segment; one is elected Designated Forwarder per BD; both forward unicast. No inter-leaf peer-link is needed.
-- **Arista MLAG:** the pair runs a peer-link (`Ethernet4`+`Ethernet5` → `Port-Channel1`) carrying the control-plane `Vlan4094` peer SVI, presents a single LACP system to the host, and shares one VTEP source loopback so the rest of the fabric sees one VTEP per pair.
-- **Interop:** to the remote pod, both look like ordinary EVPN VTEPs advertising MAC/IP routes — no vendor-specific multihoming signaling crosses the inter-pod boundary.
+Below the map are per-switch panels — throughput, BGP-EVPN sessions, CPU, memory, service state, and a log viewer. Use the **node selector** at the top of the dashboard to focus those panels on any switch.
 
-## Verification
+### Make traffic flow
 
-Run these after the ~90 s overload timer clears.
-
-**Nokia IS-IS adjacencies** (expect 6 per spine: 4 × L1L2 to local leaves + 2 × L2 to Arista spines):
+The map only moves when packets are flowing. A simple interactive tool drives test traffic between the four hosts:
 
 ```bash
-docker exec nokia-spine1 sr_cli -d "show network-instance default protocols isis adjacency"
-docker exec nokia-spine2 sr_cli -d "show network-instance default protocols isis adjacency"
+sudo python3 traffic.py
 ```
 
-**Arista IS-IS neighbors** (expect both Nokia spines as `L2 / UP`, plus 4 × L1L2 to local leaves):
+Pick a scenario — each one is labelled with the service it exercises:
 
-```bash
-docker exec arista-spine1 Cli -p 15 -c "show isis neighbors"
-docker exec arista-spine2 Cli -p 15 -c "show isis neighbors"
-```
+| Scenario | What it shows |
+|---|---|
+| BD-A L2 stretch, cross-site (h1↔h3) | Same subnet, Nokia ↔ Arista over the L2 overlay |
+| BD-B L2 stretch, cross-site (h2↔h4) | Same subnet, the other bridge domain |
+| BD-A↔BD-B routed, Nokia-local (h1↔h2) | Routed between subnets inside one pod |
+| BD-A↔BD-B routed, Arista-local (h3↔h4) | Routed between subnets inside the other pod |
+| BD-A↔BD-B, cross-site (h1↔h4, h3↔h2) | Routed **and** across pods |
+| Full mesh | All host pairs at once |
 
-**BGP-EVPN on the RRs** (expect 9 neighbors, all `Estab`):
+Set the rate, then watch the per-host throughput table in the tool and the links light up in Grafana. Press **`s`** to stop all traffic, **`q`** to quit (traffic keeps running until you stop it).
 
-```bash
-docker exec arista-spine1 Cli -p 15 -c "show bgp evpn summary"
-docker exec arista-spine2 Cli -p 15 -c "show bgp evpn summary"
-```
+### Logs
 
-**Arista MLAG health:**
+Open the **log viewer** panel (pick a node with the selector) to browse device syslog — config changes, interface flaps, protocol events.
 
-```bash
-docker exec arista-leaf5 Cli -p 15 -c "show mlag"
-```
+> **Note:** SR Linux (Nokia) logs flow fully into the dashboard. Arista cEOS logs do **not** appear — the containerized cEOS lab image stops sending syslog after it boots. This is a limitation of the cEOS image, not the lab; the syslog config is correct and works on real EOS hardware. Everything else for the Arista pod — metrics, link state, the topology map — works fully.
 
-**Nokia Ethernet-Segment / DF election** (SR Linux 26.3.2 path — no `protocols evpn` prefix):
+## Explore the fabric
 
-```bash
-docker exec nokia-leaf1 sr_cli -d "show system network-instance ethernet-segments h1_esi detail"
-```
+Run these after the ~90 s settle time. (Prefix with `sudo` if your Docker needs it.)
 
-**Host ping matrix** — confirm all four hosts reach each other (intra- and inter-subnet):
-
+**Do the hosts all reach each other?** (intra-subnet and inter-subnet, across both vendors):
 ```bash
 for s in h1 h2 h3 h4; do
   for d in 10.110.0.11 10.120.0.12 10.110.0.13 10.120.0.14; do
-    docker exec "$s" ping -c3 -W2 "$d"
+    docker exec "$s" ping -c2 -W2 "$d"
   done
 done
 ```
 
-## Repository layout
+**Look inside the switches:**
+```bash
+# Nokia spine — IS-IS neighbors (4 local leaves + 2 Arista spines)
+docker exec nokia-spine1 sr_cli -d "show network-instance default protocols isis adjacency"
+
+# Arista spine — the EVPN route-reflector sessions (expect 9 established)
+docker exec arista-spine1 Cli -p 15 -c "show bgp evpn summary"
+
+# Arista MLAG health
+docker exec arista-leaf5 Cli -p 15 -c "show mlag"
+
+# Nokia Ethernet-Segment / designated-forwarder election
+docker exec nokia-leaf1 sr_cli -d "show system network-instance ethernet-segments h1_esi detail"
+```
+
+You can also drop into any device interactively, e.g. `docker exec -it nokia-leaf1 sr_cli` or `docker exec -it arista-leaf5 Cli -p 15`.
+
+## How the fabric works (reference)
+
+**Services.** Two L2 bridge domains are stretched across both pods, and a tenant L3 VRF routes between them. All four hosts share one anycast gateway MAC on every leaf, both vendors.
+
+| Service | Subnet | Gateway | Hosts |
+|---|---|---|---|
+| BD-A | 10.110.0.0/24 | 10.110.0.1 | h1, h3 |
+| BD-B | 10.120.0.0/24 | 10.120.0.1 | h2, h4 |
+| Tenant VRF | routes BD-A ↔ BD-B (symmetric IRB) | — | all |
+
+**Loopbacks & areas.** Each pod is its own IS-IS area; loopbacks are reachable end to end with no route leaking.
+
+| | Nokia pod | Arista pod |
+|---|---|---|
+| IS-IS area | 49.0200 | 49.0078 |
+| Loopbacks | 10.252.200.x | 10.252.183.x |
+
+**Underlay** — a multi-area IS-IS fabric. Each pod is one area; the pods join over a Level-2-only spine-to-spine mesh, IPv4-only, jumbo MTU. (Cross-vendor IS-IS needs matched MTU, same-subnet /31s, and loosened hello padding on the inter-pod links — already configured here.)
+
+**Overlay** — one iBGP-EVPN domain, ASN 65524 everywhere. The two **Arista spines are the EVPN route-reflectors** for all eight leaves in both pods; the Nokia spines run no BGP and are pure transit. Only the leaves are VTEPs.
+
+**Multihoming** — each host dual-homes to a leaf pair, but each pod does it its own way and they interwork because only standard EVPN crosses between pods:
+
+| | Nokia pod | Arista pod |
+|---|---|---|
+| Method | EVPN ESI, all-active | MLAG |
+| Pairs | leaf1+leaf2, leaf3+leaf4 | leaf5+leaf6, leaf7+leaf8 |
+| Peer-link | none needed | `Port-Channel1` (Ethernet4+5) |
+
+## What's in the repo
 
 ```
-nokia-arista-multipod-dcf/
-├── nokia-arista-multipod-dcf.clab.yaml   # containerlab topology (nodes, links, host bonds)
-├── topology.png                # diagram
-└── configs/
-    ├── nokia-spine1.cfg  nokia-spine2.cfg     # SR Linux — IS-IS transit, no BGP
-    ├── nokia-leaf1.cfg … nokia-leaf4.cfg      # SR Linux — IS-IS + iBGP-EVPN + ESI + IRB
-    ├── arista-spine1.cfg  arista-spine2.cfg   # cEOS — IS-IS + EVPN route-reflector
-    └── arista-leaf5.cfg … arista-leaf8.cfg    # cEOS — IS-IS + iBGP-EVPN + MLAG + IRB
+nokia-arista-multipod-dcf.clab.yaml   # the lab — switches, hosts, telemetry stack
+traffic.py                            # interactive traffic generator
+configs/                              # per-device startup configs + the telemetry stack config
+telemetry/                            # tooling used to build the dashboard (you don't need to touch this)
 ```

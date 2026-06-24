@@ -1,0 +1,594 @@
+---
+anchors:
+  thresholds-operstate: &thresholds-operstate
+    - { color: "#FF3154", level: 0 }
+    - { color: "#4BDD33", level: 1 }
+  thresholds-traffic: &thresholds-traffic
+    - { color: "#bec8d2", level: 0 }
+    - { color: "#4BDD33", level: 1000 }
+    - { color: "#FFFF00", level: 500000 }
+    - { color: "#FF8000", level: 2000000 }
+    - { color: "#FF3154", level: 8000000 }
+  label-config: &label-config
+    separator: replace
+    units: bps
+    decimalPoints: 0
+
+cellIdPreamble: cell-
+cells:
+  "link_id:nokia-spine1:e1-1:nokia-leaf1:e1-33":
+    dataRef: nokia-spine1:e1-1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:nokia-leaf1:e1-33:nokia-spine1:e1-1":
+    dataRef: nokia-leaf1:e1-33:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine1:e1-1:nokia-leaf1:e1-33":
+    dataRef: oper-state:nokia-spine1:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "nokia-leaf1:e1-33:nokia-spine1:e1-1":
+    dataRef: oper-state:nokia-leaf1:e1-33
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine2:e1-1:nokia-leaf1:e1-34":
+    dataRef: nokia-spine2:e1-1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:nokia-leaf1:e1-34:nokia-spine2:e1-1":
+    dataRef: nokia-leaf1:e1-34:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine2:e1-1:nokia-leaf1:e1-34":
+    dataRef: oper-state:nokia-spine2:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "nokia-leaf1:e1-34:nokia-spine2:e1-1":
+    dataRef: oper-state:nokia-leaf1:e1-34
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine1:e1-2:nokia-leaf2:e1-33":
+    dataRef: nokia-spine1:e1-2:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:nokia-leaf2:e1-33:nokia-spine1:e1-2":
+    dataRef: nokia-leaf2:e1-33:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine1:e1-2:nokia-leaf2:e1-33":
+    dataRef: oper-state:nokia-spine1:e1-2
+    fillColor:
+      thresholds: *thresholds-operstate
+  "nokia-leaf2:e1-33:nokia-spine1:e1-2":
+    dataRef: oper-state:nokia-leaf2:e1-33
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine2:e1-2:nokia-leaf2:e1-34":
+    dataRef: nokia-spine2:e1-2:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:nokia-leaf2:e1-34:nokia-spine2:e1-2":
+    dataRef: nokia-leaf2:e1-34:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine2:e1-2:nokia-leaf2:e1-34":
+    dataRef: oper-state:nokia-spine2:e1-2
+    fillColor:
+      thresholds: *thresholds-operstate
+  "nokia-leaf2:e1-34:nokia-spine2:e1-2":
+    dataRef: oper-state:nokia-leaf2:e1-34
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine1:e1-3:nokia-leaf3:e1-33":
+    dataRef: nokia-spine1:e1-3:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:nokia-leaf3:e1-33:nokia-spine1:e1-3":
+    dataRef: nokia-leaf3:e1-33:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine1:e1-3:nokia-leaf3:e1-33":
+    dataRef: oper-state:nokia-spine1:e1-3
+    fillColor:
+      thresholds: *thresholds-operstate
+  "nokia-leaf3:e1-33:nokia-spine1:e1-3":
+    dataRef: oper-state:nokia-leaf3:e1-33
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine2:e1-3:nokia-leaf3:e1-34":
+    dataRef: nokia-spine2:e1-3:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:nokia-leaf3:e1-34:nokia-spine2:e1-3":
+    dataRef: nokia-leaf3:e1-34:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine2:e1-3:nokia-leaf3:e1-34":
+    dataRef: oper-state:nokia-spine2:e1-3
+    fillColor:
+      thresholds: *thresholds-operstate
+  "nokia-leaf3:e1-34:nokia-spine2:e1-3":
+    dataRef: oper-state:nokia-leaf3:e1-34
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine1:e1-4:nokia-leaf4:e1-33":
+    dataRef: nokia-spine1:e1-4:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:nokia-leaf4:e1-33:nokia-spine1:e1-4":
+    dataRef: nokia-leaf4:e1-33:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine1:e1-4:nokia-leaf4:e1-33":
+    dataRef: oper-state:nokia-spine1:e1-4
+    fillColor:
+      thresholds: *thresholds-operstate
+  "nokia-leaf4:e1-33:nokia-spine1:e1-4":
+    dataRef: oper-state:nokia-leaf4:e1-33
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine2:e1-4:nokia-leaf4:e1-34":
+    dataRef: nokia-spine2:e1-4:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:nokia-leaf4:e1-34:nokia-spine2:e1-4":
+    dataRef: nokia-leaf4:e1-34:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine2:e1-4:nokia-leaf4:e1-34":
+    dataRef: oper-state:nokia-spine2:e1-4
+    fillColor:
+      thresholds: *thresholds-operstate
+  "nokia-leaf4:e1-34:nokia-spine2:e1-4":
+    dataRef: oper-state:nokia-leaf4:e1-34
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-spine1:Ethernet3:arista-leaf5:Ethernet2":
+    dataRef: arista-spine1:Ethernet3:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf5:Ethernet2:arista-spine1:Ethernet3":
+    dataRef: arista-leaf5:Ethernet2:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-spine1:Ethernet3:arista-leaf5:Ethernet2":
+    dataRef: oper-state:arista-spine1:Ethernet3
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf5:Ethernet2:arista-spine1:Ethernet3":
+    dataRef: oper-state:arista-leaf5:Ethernet2
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-spine2:Ethernet3:arista-leaf5:Ethernet3":
+    dataRef: arista-spine2:Ethernet3:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf5:Ethernet3:arista-spine2:Ethernet3":
+    dataRef: arista-leaf5:Ethernet3:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-spine2:Ethernet3:arista-leaf5:Ethernet3":
+    dataRef: oper-state:arista-spine2:Ethernet3
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf5:Ethernet3:arista-spine2:Ethernet3":
+    dataRef: oper-state:arista-leaf5:Ethernet3
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-spine1:Ethernet4:arista-leaf6:Ethernet2":
+    dataRef: arista-spine1:Ethernet4:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf6:Ethernet2:arista-spine1:Ethernet4":
+    dataRef: arista-leaf6:Ethernet2:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-spine1:Ethernet4:arista-leaf6:Ethernet2":
+    dataRef: oper-state:arista-spine1:Ethernet4
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf6:Ethernet2:arista-spine1:Ethernet4":
+    dataRef: oper-state:arista-leaf6:Ethernet2
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-spine2:Ethernet4:arista-leaf6:Ethernet3":
+    dataRef: arista-spine2:Ethernet4:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf6:Ethernet3:arista-spine2:Ethernet4":
+    dataRef: arista-leaf6:Ethernet3:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-spine2:Ethernet4:arista-leaf6:Ethernet3":
+    dataRef: oper-state:arista-spine2:Ethernet4
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf6:Ethernet3:arista-spine2:Ethernet4":
+    dataRef: oper-state:arista-leaf6:Ethernet3
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-spine1:Ethernet5:arista-leaf7:Ethernet2":
+    dataRef: arista-spine1:Ethernet5:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf7:Ethernet2:arista-spine1:Ethernet5":
+    dataRef: arista-leaf7:Ethernet2:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-spine1:Ethernet5:arista-leaf7:Ethernet2":
+    dataRef: oper-state:arista-spine1:Ethernet5
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf7:Ethernet2:arista-spine1:Ethernet5":
+    dataRef: oper-state:arista-leaf7:Ethernet2
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-spine2:Ethernet5:arista-leaf7:Ethernet3":
+    dataRef: arista-spine2:Ethernet5:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf7:Ethernet3:arista-spine2:Ethernet5":
+    dataRef: arista-leaf7:Ethernet3:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-spine2:Ethernet5:arista-leaf7:Ethernet3":
+    dataRef: oper-state:arista-spine2:Ethernet5
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf7:Ethernet3:arista-spine2:Ethernet5":
+    dataRef: oper-state:arista-leaf7:Ethernet3
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-spine1:Ethernet6:arista-leaf8:Ethernet2":
+    dataRef: arista-spine1:Ethernet6:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf8:Ethernet2:arista-spine1:Ethernet6":
+    dataRef: arista-leaf8:Ethernet2:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-spine1:Ethernet6:arista-leaf8:Ethernet2":
+    dataRef: oper-state:arista-spine1:Ethernet6
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf8:Ethernet2:arista-spine1:Ethernet6":
+    dataRef: oper-state:arista-leaf8:Ethernet2
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-spine2:Ethernet6:arista-leaf8:Ethernet3":
+    dataRef: arista-spine2:Ethernet6:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf8:Ethernet3:arista-spine2:Ethernet6":
+    dataRef: arista-leaf8:Ethernet3:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-spine2:Ethernet6:arista-leaf8:Ethernet3":
+    dataRef: oper-state:arista-spine2:Ethernet6
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf8:Ethernet3:arista-spine2:Ethernet6":
+    dataRef: oper-state:arista-leaf8:Ethernet3
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine1:e1-21:arista-spine1:Ethernet1":
+    dataRef: nokia-spine1:e1-21:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-spine1:Ethernet1:nokia-spine1:e1-21":
+    dataRef: arista-spine1:Ethernet1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine1:e1-21:arista-spine1:Ethernet1":
+    dataRef: oper-state:nokia-spine1:e1-21
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-spine1:Ethernet1:nokia-spine1:e1-21":
+    dataRef: oper-state:arista-spine1:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine1:e1-22:arista-spine2:Ethernet1":
+    dataRef: nokia-spine1:e1-22:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-spine2:Ethernet1:nokia-spine1:e1-22":
+    dataRef: arista-spine2:Ethernet1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine1:e1-22:arista-spine2:Ethernet1":
+    dataRef: oper-state:nokia-spine1:e1-22
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-spine2:Ethernet1:nokia-spine1:e1-22":
+    dataRef: oper-state:arista-spine2:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine2:e1-21:arista-spine1:Ethernet2":
+    dataRef: nokia-spine2:e1-21:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-spine1:Ethernet2:nokia-spine2:e1-21":
+    dataRef: arista-spine1:Ethernet2:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine2:e1-21:arista-spine1:Ethernet2":
+    dataRef: oper-state:nokia-spine2:e1-21
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-spine1:Ethernet2:nokia-spine2:e1-21":
+    dataRef: oper-state:arista-spine1:Ethernet2
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-spine2:e1-22:arista-spine2:Ethernet2":
+    dataRef: nokia-spine2:e1-22:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-spine2:Ethernet2:nokia-spine2:e1-22":
+    dataRef: arista-spine2:Ethernet2:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-spine2:e1-22:arista-spine2:Ethernet2":
+    dataRef: oper-state:nokia-spine2:e1-22
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-spine2:Ethernet2:nokia-spine2:e1-22":
+    dataRef: oper-state:arista-spine2:Ethernet2
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-leaf5:Ethernet4:arista-leaf6:Ethernet4":
+    dataRef: arista-leaf5:Ethernet4:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf6:Ethernet4:arista-leaf5:Ethernet4":
+    dataRef: arista-leaf6:Ethernet4:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-leaf5:Ethernet4:arista-leaf6:Ethernet4":
+    dataRef: oper-state:arista-leaf5:Ethernet4
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf6:Ethernet4:arista-leaf5:Ethernet4":
+    dataRef: oper-state:arista-leaf6:Ethernet4
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-leaf5:Ethernet5:arista-leaf6:Ethernet5":
+    dataRef: arista-leaf5:Ethernet5:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf6:Ethernet5:arista-leaf5:Ethernet5":
+    dataRef: arista-leaf6:Ethernet5:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-leaf5:Ethernet5:arista-leaf6:Ethernet5":
+    dataRef: oper-state:arista-leaf5:Ethernet5
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf6:Ethernet5:arista-leaf5:Ethernet5":
+    dataRef: oper-state:arista-leaf6:Ethernet5
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-leaf7:Ethernet4:arista-leaf8:Ethernet4":
+    dataRef: arista-leaf7:Ethernet4:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf8:Ethernet4:arista-leaf7:Ethernet4":
+    dataRef: arista-leaf8:Ethernet4:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-leaf7:Ethernet4:arista-leaf8:Ethernet4":
+    dataRef: oper-state:arista-leaf7:Ethernet4
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf8:Ethernet4:arista-leaf7:Ethernet4":
+    dataRef: oper-state:arista-leaf8:Ethernet4
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-leaf7:Ethernet5:arista-leaf8:Ethernet5":
+    dataRef: arista-leaf7:Ethernet5:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:arista-leaf8:Ethernet5:arista-leaf7:Ethernet5":
+    dataRef: arista-leaf8:Ethernet5:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-leaf7:Ethernet5:arista-leaf8:Ethernet5":
+    dataRef: oper-state:arista-leaf7:Ethernet5
+    fillColor:
+      thresholds: *thresholds-operstate
+  "arista-leaf8:Ethernet5:arista-leaf7:Ethernet5":
+    dataRef: oper-state:arista-leaf8:Ethernet5
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-leaf1:e1-1:h1:eth1":
+    dataRef: nokia-leaf1:e1-1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:h1:eth1:nokia-leaf1:e1-1":
+    dataRef: nokia-leaf1:e1-1:in
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-leaf1:e1-1:h1:eth1":
+    dataRef: oper-state:nokia-leaf1:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "h1:eth1:nokia-leaf1:e1-1":
+    dataRef: oper-state:nokia-leaf1:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-leaf2:e1-1:h1:eth2":
+    dataRef: nokia-leaf2:e1-1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:h1:eth2:nokia-leaf2:e1-1":
+    dataRef: nokia-leaf2:e1-1:in
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-leaf2:e1-1:h1:eth2":
+    dataRef: oper-state:nokia-leaf2:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "h1:eth2:nokia-leaf2:e1-1":
+    dataRef: oper-state:nokia-leaf2:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-leaf3:e1-1:h2:eth1":
+    dataRef: nokia-leaf3:e1-1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:h2:eth1:nokia-leaf3:e1-1":
+    dataRef: nokia-leaf3:e1-1:in
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-leaf3:e1-1:h2:eth1":
+    dataRef: oper-state:nokia-leaf3:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "h2:eth1:nokia-leaf3:e1-1":
+    dataRef: oper-state:nokia-leaf3:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:nokia-leaf4:e1-1:h2:eth2":
+    dataRef: nokia-leaf4:e1-1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:h2:eth2:nokia-leaf4:e1-1":
+    dataRef: nokia-leaf4:e1-1:in
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "nokia-leaf4:e1-1:h2:eth2":
+    dataRef: oper-state:nokia-leaf4:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "h2:eth2:nokia-leaf4:e1-1":
+    dataRef: oper-state:nokia-leaf4:e1-1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-leaf5:Ethernet1:h3:eth1":
+    dataRef: arista-leaf5:Ethernet1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:h3:eth1:arista-leaf5:Ethernet1":
+    dataRef: arista-leaf5:Ethernet1:in
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-leaf5:Ethernet1:h3:eth1":
+    dataRef: oper-state:arista-leaf5:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "h3:eth1:arista-leaf5:Ethernet1":
+    dataRef: oper-state:arista-leaf5:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-leaf6:Ethernet1:h3:eth2":
+    dataRef: arista-leaf6:Ethernet1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:h3:eth2:arista-leaf6:Ethernet1":
+    dataRef: arista-leaf6:Ethernet1:in
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-leaf6:Ethernet1:h3:eth2":
+    dataRef: oper-state:arista-leaf6:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "h3:eth2:arista-leaf6:Ethernet1":
+    dataRef: oper-state:arista-leaf6:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-leaf7:Ethernet1:h4:eth1":
+    dataRef: arista-leaf7:Ethernet1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:h4:eth1:arista-leaf7:Ethernet1":
+    dataRef: arista-leaf7:Ethernet1:in
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-leaf7:Ethernet1:h4:eth1":
+    dataRef: oper-state:arista-leaf7:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "h4:eth1:arista-leaf7:Ethernet1":
+    dataRef: oper-state:arista-leaf7:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "link_id:arista-leaf8:Ethernet1:h4:eth2":
+    dataRef: arista-leaf8:Ethernet1:out
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "link_id:h4:eth2:arista-leaf8:Ethernet1":
+    dataRef: arista-leaf8:Ethernet1:in
+    label: *label-config
+    strokeColor:
+      thresholds: *thresholds-traffic
+  "arista-leaf8:Ethernet1:h4:eth2":
+    dataRef: oper-state:arista-leaf8:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate
+  "h4:eth2:arista-leaf8:Ethernet1":
+    dataRef: oper-state:arista-leaf8:Ethernet1
+    fillColor:
+      thresholds: *thresholds-operstate

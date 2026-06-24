@@ -6,3 +6,8 @@ clab-*/
 ansible-inventory.yml
 topology-data.json
 authorized_keys
+
+# telemetry build artifacts (screenshots, python cache)
+telemetry/*.png
+__pycache__/
+*.pyc

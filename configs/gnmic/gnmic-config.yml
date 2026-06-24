@@ -1,0 +1,199 @@
+username: admin
+timeout: 10s
+
+# ===========================================================================
+# Multi-vendor gNMI collection for nokia-arista-multipod-dcf
+#   - Nokia SR Linux  : native YANG, gNMI TLS:57400, creds admin/NokiaSrl1!
+#   - Arista cEOS      : OpenConfig,   gNMI plaintext:6030, creds admin/admin
+# Single gnmic instance, single prometheus output :9273 (Prometheus scrapes it).
+# ===========================================================================
+
+# ---- Nokia SR Linux target group ------------------------------------------
+common_srl_subscriptions: &common_srl_subs
+  skip-verify: true
+  insecure: false
+  password: NokiaSrl1!
+  subscriptions:
+    - srl-if-stats
+    - srl-bgp
+    - srl-system-performance
+    - srl-routes
+    - srl-bridge
+    - srl-apps
+    - srl-net-instance
+
+# ---- Arista cEOS target group ---------------------------------------------
+# cEOS gNMI = plaintext gRPC on 6030 (no TLS) -> insecure: true (NOT skip-verify).
+# NOTE: gnmic ignores a per-target `port:` field; the port MUST be in the target
+# address key (e.g. "arista-leaf5:6030"), else it falls back to 57400.
+common_arista_subscriptions: &common_arista_subs
+  username: admin
+  password: admin
+  insecure: true
+  encoding: json_ietf
+  subscriptions:
+    - arista-if-counters
+    - arista-if-status
+    - arista-bgp
+
+targets:
+  # --- Pod-Nokia (SR Linux 26.3.2) — default gNMI port 57400 ---
+  nokia-spine1: *common_srl_subs
+  nokia-spine2: *common_srl_subs
+  nokia-leaf1:  *common_srl_subs
+  nokia-leaf2:  *common_srl_subs
+  nokia-leaf3:  *common_srl_subs
+  nokia-leaf4:  *common_srl_subs
+  # --- Pod-Arista (cEOS 4.34) — name stays clean (source label), port via address ---
+  arista-spine1: { address: "arista-spine1:6030", <<: *common_arista_subs }
+  arista-spine2: { address: "arista-spine2:6030", <<: *common_arista_subs }
+  arista-leaf5:  { address: "arista-leaf5:6030",  <<: *common_arista_subs }
+  arista-leaf6:  { address: "arista-leaf6:6030",  <<: *common_arista_subs }
+  arista-leaf7:  { address: "arista-leaf7:6030",  <<: *common_arista_subs }
+  arista-leaf8:  { address: "arista-leaf8:6030",  <<: *common_arista_subs }
+
+subscriptions:
+  # ---- SR Linux (native YANG) ----
+  srl-system-performance:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /platform/control[slot=*]/cpu[index=all]/total
+      - /platform/control[slot=*]/memory
+  srl-if-stats:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /interface[name=ethernet-1/*]/oper-state
+      - /interface[name=ethernet-1/*]/statistics
+      - /interface[name=ethernet-1/*]/traffic-rate
+  srl-routes:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /network-instance[name=*]/route-table/ipv4-unicast/statistics/
+      - /network-instance[name=*]/route-table/ipv6-unicast/statistics/
+  srl-bgp:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /network-instance[name=*]/protocols/bgp/statistics
+  srl-bridge:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /network-instance[name=*]/bridge-table/statistics/
+  srl-apps:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /system/app-management/application[name=*]
+  srl-net-instance:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /network-instance[name=*]/oper-state
+
+  # ---- Arista cEOS (OpenConfig) ----
+  arista-if-counters:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /interfaces/interface/state/counters
+  arista-if-status:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /interfaces/interface/state/oper-status
+      - /interfaces/interface/state/admin-status
+  arista-bgp:
+    mode: stream
+    stream-mode: sample
+    sample-interval: 5s
+    paths:
+      - /network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/session-state
+
+outputs:
+  prom-output:
+    type: prometheus
+    listen: :9273
+    event-processors:
+      - trim-prefixes
+      - oper-state-to-int
+      - rename-srl-interface
+      - arista-status-to-int
+      - arista-bgp-state-to-int
+
+processors:
+  trim-prefixes:
+    event-strings:
+      value-names:
+        - "^/state/.*"
+      transforms:
+        - trim-prefix:
+            apply-on: "name"
+            prefix: "/state/"
+
+  # SRL oper-state is lowercase up/down -> int. Leaves Arista UP/DOWN untouched.
+  oper-state-to-int:
+    event-strings:
+      value-names:
+        - ".*"
+      transforms:
+        - replace:
+            apply-on: "value"
+            old: "up"
+            new: "1"
+        - replace:
+            apply-on: "value"
+            old: "down"
+            new: "0"
+
+  # SRL ethernet-1/X -> e1-X. Arista 'EthernetN' has no 'ethernet-' / '/' => unchanged.
+  rename-srl-interface:
+    event-strings:
+      tag-names:
+        - "interface_name"
+      transforms:
+        - replace:
+            apply-on: "value"
+            old: "ethernet-"
+            new: "e"
+        - replace:
+            apply-on: "value"
+            old: "/"
+            new: "-"
+
+  # Arista OpenConfig oper/admin-status are UPPERCASE enums -> int (force numeric series).
+  # NOTE: at processor time the value-name is the gNMI PATH form (slashes), e.g.
+  # 'interfaces/interface/state/oper-status' — NOT the prometheus-flattened name.
+  arista-status-to-int:
+    event-strings:
+      value-names:
+        - "oper-status$"
+        - "admin-status$"
+      transforms:
+        - replace: { apply-on: "value", old: "UP",   new: "1" }
+        - replace: { apply-on: "value", old: "DOWN", new: "0" }
+
+  # Arista OpenConfig BGP session-state enum -> int (1=ESTABLISHED, else 0).
+  arista-bgp-state-to-int:
+    event-strings:
+      value-names:
+        - "session-state$"
+      transforms:
+        - replace: { apply-on: "value", old: "ESTABLISHED", new: "1" }
+        - replace: { apply-on: "value", old: "IDLE",        new: "0" }
+        - replace: { apply-on: "value", old: "ACTIVE",      new: "0" }
+        - replace: { apply-on: "value", old: "CONNECT",     new: "0" }
+        - replace: { apply-on: "value", old: "OPENSENT",    new: "0" }
+        - replace: { apply-on: "value", old: "OPENCONFIRM", new: "0" }

@@ -136,6 +136,62 @@ topology:
         - sudo ip addr add 10.120.0.14/24 dev bond0
         - sudo ip route add default via 10.120.0.1
 
+    # ---------- Telemetry & logging stack ----------
+    gnmic:
+      kind: linux
+      image: ghcr.io/openconfig/gnmic:0.39.1
+      binds:
+        - ./configs/gnmic/gnmic-config.yml:/gnmic-config.yml:ro
+      cmd: --config /gnmic-config.yml --log subscribe
+
+    prometheus:
+      kind: linux
+      image: quay.io/prometheus/prometheus:v2.54.1
+      binds:
+        - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      cmd: --config.file=/etc/prometheus/prometheus.yml
+      ports:
+        - 9090:9090
+
+    grafana:
+      kind: linux
+      image: grafana/grafana:11.2.0
+      binds:
+        - ./configs/grafana/provisioning/datasources/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yaml:ro
+        - ./configs/grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yaml:ro
+        - ./configs/grafana/dashboards:/var/lib/grafana/dashboards
+        - ./configs/grafana/flow_panels:/usr/share/grafana/public/flow_panels
+      ports:
+        - 3000:3000
+      env:
+        GF_INSTALL_PLUGINS: "andrewbmchugh-flow-panel"
+        GF_ORG_ROLE: "Admin"
+        GF_ORG_NAME: "Main Org"
+        GF_AUTH_ANONYMOUS_ENABLED: "true"
+        GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+        GF_AUTH_ANONYMOUS: "true"
+        GF_USERS_DEFAULT_THEME: "light"
+        GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: "/var/lib/grafana/dashboards/nokia-arista-multipod-dcf-telemetry.json"
+
+    promtail:
+      kind: linux
+      image: grafana/promtail:3.2.0
+      mgmt-ipv4: 172.20.20.100
+      binds:
+        - ./configs/promtail:/etc/promtail
+      cmd: --config.file=/etc/promtail/promtail-config.yml
+      ports:
+        - 9080:9080
+
+    loki:
+      kind: linux
+      image: grafana/loki:3.2.0
+      binds:
+        - ./configs/loki:/etc/loki
+      cmd: --config.file=/etc/loki/loki-config.yml
+      ports:
+        - 3100:3100
+
   links:
     # ----- Pod-Nokia: spine <-> leaf (leaf e1-33 to spine1, e1-34 to spine2) -----
     - endpoints: ["nokia-spine1:e1-1", "nokia-leaf1:e1-33"]
