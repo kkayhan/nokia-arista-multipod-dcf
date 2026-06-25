@@ -103,9 +103,11 @@ Open the **log viewer** panel (pick a node with the selector) to browse device s
 
 ## Explore the fabric
 
-Run these after the ~90 s settle time. (Prefix with `sudo` if your Docker needs it.)
+Run these after the ~90 s settle time.
 
-**Do the hosts all reach each other?** (intra-subnet and inter-subnet, across both vendors):
+### Do the hosts all reach each other?
+
+The four test hosts are plain Linux containers — drive them with `docker exec` (prefix `sudo` if your Docker needs it):
 ```bash
 for s in h1 h2 h3 h4; do
   for d in 10.110.0.11 10.120.0.12 10.110.0.13 10.120.0.14; do
@@ -113,23 +115,45 @@ for s in h1 h2 h3 h4; do
   done
 done
 ```
+All pings should succeed — same-subnet (L2 stretch) and across subnets (routed). Drop into a host's shell with `docker exec -it h1 bash`.
 
-**Look inside the switches:**
+### Log into the switches over SSH
+
+containerlab adds each switch's name to your `/etc/hosts`, so you can SSH to them by name:
+
 ```bash
-# Nokia spine — IS-IS neighbors (4 local leaves + 2 Arista spines)
-docker exec nokia-spine1 sr_cli -d "show network-instance default protocols isis adjacency"
-
-# Arista spine — the EVPN route-reflector sessions (expect 9 established)
-docker exec arista-spine1 Cli -p 15 -c "show bgp evpn summary"
-
-# Arista MLAG health
-docker exec arista-leaf5 Cli -p 15 -c "show mlag"
-
-# Nokia Ethernet-Segment / designated-forwarder election
-docker exec nokia-leaf1 sr_cli -d "show system network-instance ethernet-segments h1_esi detail"
+ssh admin@nokia-leaf1      # Nokia SR Linux  →  password: NokiaSrl1!
+ssh admin@arista-leaf5     # Arista cEOS     →  password: admin
 ```
 
-You can also drop into any device interactively, e.g. `docker exec -it nokia-leaf1 sr_cli` or `docker exec -it arista-leaf5 Cli -p 15`.
+Run a single command without logging in interactively:
+```bash
+ssh admin@arista-spine1 "show bgp evpn summary"
+```
+
+> On redeploy the switches get new SSH host keys. If SSH warns about a changed key, clear the old one with `ssh-keygen -R nokia-leaf1`, or add `-o StrictHostKeyChecking=no`.
+
+### Useful `show` commands
+
+**Nokia SR Linux** — `ssh admin@nokia-spine1` (or `nokia-leaf1`…`nokia-leaf4`):
+
+| On | Command | Shows |
+|---|---|---|
+| spine | `show network-instance default protocols isis adjacency` | IS-IS neighbors (local leaves + the Arista spines) |
+| leaf | `show network-instance default protocols bgp neighbor` | BGP-EVPN sessions to the route-reflectors |
+| leaf | `show system network-instance ethernet-segments` | ESI all-active state / designated forwarder |
+| leaf | `show network-instance bd-a bridge-table mac-table all` | learned MACs in BD-A (local + remote VTEPs) |
+| leaf | `show tunnel vxlan-tunnel all` | remote VTEPs this leaf talks to |
+
+**Arista cEOS** — `ssh admin@arista-spine1` (or `arista-leaf5`…`arista-leaf8`):
+
+| On | Command | Shows |
+|---|---|---|
+| spine | `show bgp evpn summary` | route-reflector sessions (expect 9 established) |
+| spine / leaf | `show isis neighbors` | IS-IS neighbors |
+| leaf | `show mlag` | MLAG health (state `Active`, peer-link `Up`) |
+| leaf | `show vxlan vtep` | remote VTEPs |
+| leaf | `show bgp evpn summary` | EVPN sessions to both route-reflectors |
 
 ## How the fabric works (reference)
 
