@@ -144,6 +144,7 @@ ssh admin@arista-spine1 "show bgp evpn summary"
 | leaf | `show system network-instance ethernet-segments` | ESI all-active state / designated forwarder |
 | leaf | `show network-instance bd-a bridge-table mac-table all` | learned MACs in BD-A (local + remote VTEPs) |
 | leaf | `show tunnel vxlan-tunnel all` | remote VTEPs this leaf talks to |
+| leaf | `show network-instance tenant route-table` | the tenant ip-vrf route table (routes BD-A ↔ BD-B) |
 
 **Arista cEOS** — `ssh admin@arista-spine1` (or `arista-leaf5`…`arista-leaf8`):
 
@@ -154,6 +155,7 @@ ssh admin@arista-spine1 "show bgp evpn summary"
 | leaf | `show mlag` | MLAG health (state `Active`, peer-link `Up`) |
 | leaf | `show vxlan vtep` | remote VTEPs |
 | leaf | `show bgp evpn summary` | EVPN sessions to both route-reflectors |
+| leaf | `show ip route vrf tenant` | the tenant ip-vrf route table (routes BD-A ↔ BD-B) |
 
 ## How the fabric works (reference)
 
