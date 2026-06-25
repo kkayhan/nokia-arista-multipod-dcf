@@ -1,6 +1,6 @@
 # nokia-arista-multipod-dcf
 
-A multi-vendor EVPN-VXLAN data-center fabric you can run on your laptop with [containerlab](https://containerlab.dev). Two leaf-spine pods — one **Nokia SR Linux**, one **Arista cEOS** — are joined into a single stretched overlay, so four hosts spread across both vendors reach each other over L2 and L3. A **Grafana telemetry dashboard** ships with the lab and lights up the whole fabric live.
+A multi-vendor EVPN-VXLAN data-center fabric you can run with [containerlab](https://containerlab.dev). Two leaf-spine pods — one **Nokia SR Linux**, one **Arista cEOS** — are joined into a single stretched overlay, so four hosts spread across both vendors reach each other over L2 and L3. A **Grafana telemetry dashboard** ships with the lab and lights up the whole fabric live.
 
 ![topology](grafana-topology.png)
 
